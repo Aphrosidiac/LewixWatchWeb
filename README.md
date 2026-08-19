@@ -1,11 +1,16 @@
 # LewixWatchWeb
 
-Interactive 3D viewer for an **ETA 6498-1** manual-winding watch movement —
-orbit it, and open it into an exploded view that follows the real assembly
-order.
+Two things live here:
 
-Groundwork for a scroll-driven portfolio site in the vein of
-[thewatch.60fps.fr](https://thewatch.60fps.fr/).
+1. **The site** (`/`) — a scroll-driven product page for a fictional watch,
+   **LX 60P**. Fourteen sections, one continuous camera move, everything driven
+   by scroll position. Built as a recreation of
+   [thewatch.60fps.fr](https://thewatch.60fps.fr/) — the flow, the timing and
+   the layout are matched section for section; the watch itself is a different
+   model.
+2. **The viewer** (`/viewer.html`) — an interactive exploded view of a real
+   **ETA 6498-1** movement, built from CAD. The site's disassembly section uses
+   the same geometry.
 
 ---
 
@@ -15,35 +20,107 @@ Groundwork for a scroll-driven portfolio site in the vein of
 npm install && npm run dev
 ```
 
-Then open <http://localhost:5180>.
-
-The committed `public/model/` output is all the viewer needs. You only have to
-re-run the CAD pipeline if you change tessellation quality, the assembly-layer
-mapping, or the materials.
-
-## Controls
-
-| Action | Input |
-| --- | --- |
-| Orbit | drag |
-| Zoom | scroll |
-| Pan | right-drag |
-| Toggle exploded view | **Exploded view**, or `E` |
-| Scrub the explode | the slider |
-| Toggle render mode | **Finished / Technical**, or `M` |
-| Reset camera + explode | **Reset**, or `R` |
-
-Hovering a component names it in the top-right readout.
-
-**Finished** is the per-component PBR metals — nickel bridges, brass wheels,
-blued screws, ruby jewels. **Technical** swaps everything to one matte
-non-metallic material, the way a CAD package would present it: no reflections
-competing with the form, so bevels, gear teeth and the assembly order stay
-legible.
+Then open <http://localhost:5180> for the site, or
+<http://localhost:5180/viewer.html> for the movement viewer.
 
 ---
 
-## Where the model came from
+# The site
+
+## How it is put together
+
+| File | Job |
+| --- | --- |
+| [`src/site/content.js`](src/site/content.js) | every string, and each section's scroll length in viewport heights |
+| [`src/site/dom.js`](src/site/dom.js) | builds all fourteen sections |
+| [`src/site/scene.js`](src/site/scene.js) | the 3D stage, the pose track, the exploded movement |
+| [`src/site/env.js`](src/site/env.js) | the studio lighting environment |
+| [`src/site/particles.js`](src/site/particles.js) | the dust ribbons in the dark chapter |
+| [`src/site/main.js`](src/site/main.js) | the scroll loop that drives DOM and scene together |
+
+Vanilla JS, three.js and [Lenis](https://lenis.darkroom.engineering/). No
+framework, no GSAP — the whole page is a single `requestAnimationFrame` loop
+reading one number.
+
+### One pose curve, not fifty scroll triggers
+
+Everything the watch does is a single continuous curve through the page,
+declared as a list of keys in `scene.js`:
+
+```js
+{ at: ['timeless', 0.29], rx: -3 * DEG, ry: -92 * DEG, s: 1.66 }
+```
+
+`at` is a section id and a progress within it, so retiming a section in
+`content.js` drags its keys with it and the curve stays smooth across the join.
+Channels that a key omits are inherited, so most keys are one or two numbers.
+
+Subjects — the whole watch, the bare movement, the bracelet, the four-up
+line-up — are **hard cuts, never crossfades**. Every cut is placed on a frame
+where the outgoing and incoming objects both read as the same thin sliver, so
+the cut is invisible; and keeping each subject's keys on its own track means
+the curve never has to interpolate between two objects' unrelated coordinate
+frames.
+
+### The canvas is above the copy
+
+`#canvas-wrapper` sits at `z-index: 2`, the sections at `1`. The watch always
+occludes type and never the other way round. That single rule does most of the
+compositing.
+
+### Framing close-ups
+
+The model is a closed bracelet loop, so its bounding-box centre is somewhere in
+the middle of the strap. A `focus` channel slides the model until the **dial**
+is on the rig origin, which is what makes the three close-up sections
+(contours, dial, profile) aimable at all. The rigs also use `ZYX` rotation
+order so roll is applied last, in world space — with the default order, roll
+just spins the watch about its own dial and the side-on profile shot is
+impossible to compose.
+
+### Lighting
+
+`env.js` paints an equirectangular studio to canvas rather than loading an HDR.
+The important part is a **hard horizon**: a bright upper hemisphere over a dark
+lower one. Polished steel is a mirror, so a smooth all-over grey environment
+renders as smooth all-over grey plastic; the split gives every curved surface a
+light half, a dark half and a crisp terminator, which is what reads as
+"polished".
+
+The dark chapter does **not** swap to a dark environment. A mirror-finish metal
+lit by a black room renders black, and the calibre would disappear exactly
+where the story wants it centre stage. Instead the page goes dark and the
+watch's `envMapIntensity` is pulled down so it reads gunmetal, while the
+movement stays fully lit.
+
+### The editorial stills
+
+The photo cards in the editions and breakdown sections are not stock images —
+they are rendered from the same model and the same lighting at load time
+(`productShot()` in `scene.js`) into a 2D canvas. Costs one frame, and the
+cards can never drift out of step with the live stage.
+
+## The model
+
+`public/model/luxury-watch.glb` is a Sketchfab-style export whose every
+material arrives with `metalness: 0`, which renders steel as grey plastic, and
+whose case, bracelet and dial *share* materials — so material name alone cannot
+separate them. Size can: anything spanning more than a few model units is
+structure, everything smaller is dial furniture sitting inside the case. The
+donor model's engraved brand text is hidden; this site is branded LX 60P.
+
+## Fonts
+
+**Nekst** (display) and **Inter** (UI) in `public/fonts/`. Inter is SIL Open
+Font License. Nekst was mirrored from the reference site's own asset directory
+to match its typography exactly — if you fork this for anything real, license
+it properly from the foundry or substitute a geometric grotesque you own.
+
+---
+
+# The movement viewer
+
+## Where the movement model came from
 
 `source/` is the ETA 6498-1 assembly published on
 [GrabCAD](https://grabcad.com/library/eta-6498-1-complete-watch-movement) by

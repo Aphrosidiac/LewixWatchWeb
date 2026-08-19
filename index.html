@@ -1,52 +1,77 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>ETA 6498-1 — Movement Viewer</title>
-    <link rel="stylesheet" href="/src/style.css" />
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LX 60P — The timeless automatic watch by Lewix</title>
+
+    <meta property="og:title" content="LX 60P — The timeless automatic watch by Lewix" />
+    <meta property="og:type" content="website" />
+
+    <style>
+      #loader {
+        position: fixed;
+        inset: 0;
+        background: #ebebeb;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: all;
+      }
+      #loader svg {
+        position: absolute;
+        inset: -100%;
+        margin: auto;
+        max-width: 95%;
+        max-height: 95%;
+        min-width: 500px;
+      }
+      #loader div {
+        font-size: 11px;
+        color: #000;
+        font-family: Inter, sans-serif;
+      }
+      #loader div span { color: #0006; }
+      @media (min-width: 1024px) {
+        #loader svg { max-width: 80%; max-height: 80%; }
+        #loader div { font-size: 0.8333333333vw; }
+      }
+      .progress-arc {
+        transform: rotate(-180deg) scale(-1, 1);
+        transform-origin: center;
+        stroke-dasharray: 2168;
+        stroke-dashoffset: 2168;
+      }
+    </style>
   </head>
+
   <body>
-    <canvas id="stage"></canvas>
+    <div id="app">
+      <div id="loader">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 700 700">
+          <path
+            stroke-opacity="1"
+            stroke="#DCDCDC"
+            d="M350 695c190.538 0 345-154.462 345-345S540.538 5 350 5 5 159.462 5 350s154.462 345 345 345Z"
+          />
+          <path
+            id="loaderArc"
+            class="progress-arc"
+            stroke-opacity="1"
+            stroke-width="3"
+            stroke="#D3D3D3"
+            d="M350 695c190.538 0 345-154.462 345-345S540.538 5 350 5 5 159.462 5 350s154.462 345 345 345Z"
+          />
+        </svg>
+        <div><span>Now</span> loading</div>
+      </div>
 
-    <div id="loader" class="loader">
-      <div class="loader__bar"><span id="loaderFill"></span></div>
-      <div class="loader__pct" id="loaderPct">0%</div>
+      <div id="canvas-wrapper"><canvas id="stage"></canvas></div>
+      <div id="root"></div>
     </div>
 
-    <header class="meta">
-      <div class="meta__caliber">ETA 6498-1</div>
-      <div class="meta__sub" id="metaSub">Manual-winding movement</div>
-    </header>
-
-    <div class="readout" id="readout"><span>&nbsp;</span></div>
-
-    <div class="controls">
-      <button id="explodeBtn" class="btn" aria-pressed="false">
-        <span class="btn__dot"></span>
-        <span class="btn__label">Exploded view</span>
-      </button>
-
-      <label class="slider">
-        <input id="explodeRange" type="range" min="0" max="100" value="0" />
-      </label>
-
-      <button id="finishBtn" class="btn" aria-pressed="true">
-        <span class="btn__dot"></span>
-        <span class="btn__label" id="finishLabel">Finished</span>
-      </button>
-
-      <button id="spinBtn" class="btn btn--ghost" aria-pressed="true">
-        <span class="btn__label">Auto-rotate</span>
-      </button>
-
-      <button id="resetBtn" class="btn btn--ghost">
-        <span class="btn__label">Reset</span>
-      </button>
-    </div>
-
-    <div class="hint">Drag to orbit &middot; scroll to zoom &middot; right-drag to pan</div>
-
-    <script type="module" src="/src/main.js"></script>
+    <script type="module" src="/src/site/main.js"></script>
   </body>
 </html>

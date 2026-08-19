@@ -1,0 +1,854 @@
+/* ------------------------------------------------------------------ *
+ * LX 60P — scroll site
+ *
+ * Every type size is in vw, deliberately. The layout is a fixed
+ * composition that scales with the viewport rather than reflowing, which
+ * is what keeps the giant display lines locking to the same place
+ * relative to the 3D watch at any window size.
+ * Reference viewport for the px values quoted in comments: 1465px.
+ * ------------------------------------------------------------------ */
+
+@font-face {
+  font-family: Nekst;
+  src: url('/fonts/Nekst/Nekst-Thin.woff2') format('woff2');
+  font-weight: 100;
+  font-display: swap;
+}
+@font-face {
+  font-family: Nekst;
+  src: url('/fonts/Nekst/Nekst-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-display: swap;
+}
+@font-face {
+  font-family: Nekst;
+  src: url('/fonts/Nekst/Nekst-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: Nekst;
+  src: url('/fonts/Nekst/Nekst-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: Nekst;
+  src: url('/fonts/Nekst/Nekst-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: Inter;
+  src: url('/fonts/Inter/Inter-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-display: swap;
+}
+@font-face {
+  font-family: Inter;
+  src: url('/fonts/Inter/Inter-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: Inter;
+  src: url('/fonts/Inter/Inter-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+
+:root {
+  --bg: #ebebeb;
+  --ink: #000;
+  --ink-dim: rgba(0, 0, 0, 0.4);
+  --line-off: #bcbcbc;
+  --hair: #d4d4d4;
+
+  /* Type */
+  --t-hero: 24.3vw;
+  --t-big: 13.3333vw;
+  --t-title: 5.9vw;
+  --t-model: 10.4vw;
+  --t-counter: 14vw;
+  --t-label: 0.75vw;
+  --t-body: 0.887vw;
+  --t-micro: 0.62vw;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+  /* The display stacks are deliberately wider than the viewport — lines carry
+     indents of up to 50vw inside an 80vw box. `overflow-x: hidden` on body
+     alone does not clip that, because the scroll container is the root. */
+  overflow-x: clip;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 11px;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+/* The canvas sits ABOVE the copy — the watch always occludes type,
+   never the other way round. This one rule does most of the compositing
+   work the reference relies on. */
+#canvas-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+#stage {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+section {
+  position: relative;
+  width: 100%;
+}
+
+/* Sticky viewport-sized stage inside a tall section. */
+.pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------- *
+ * Shared furniture
+ * ---------------------------------------------------------------- */
+
+.copy-col {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 5.2vh;
+  width: 13.3vw;
+}
+
+.copy {
+  transition: none;
+}
+.copy__label {
+  font-size: var(--t-label);
+  line-height: 1.4;
+  color: var(--ink-dim);
+  margin-bottom: 1.55vh;
+}
+.copy__body {
+  font-size: var(--t-body);
+  line-height: 1.35;
+  color: var(--ink);
+  letter-spacing: -0.002em;
+}
+
+.counter {
+  position: absolute;
+  font-size: var(--t-label);
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+
+/* Circular badge that hangs half off the right edge. */
+.badge {
+  position: absolute;
+  right: -1.55vw;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4.4vw;
+  height: 4.4vw;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: var(--t-micro);
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* Technical hairline overlay used by the single-part sections. */
+.tech {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.tech i {
+  position: absolute;
+  background: var(--hair);
+  display: block;
+}
+.tech .h {
+  height: 1px;
+  left: 0;
+  right: 0;
+  top: 50%;
+}
+.tech .v {
+  width: 1px;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+}
+.tech .plus {
+  position: absolute;
+  left: 50%;
+  top: 11.2vh;
+  transform: translate(-50%, -50%);
+  width: 11px;
+  height: 11px;
+  background: none;
+}
+.tech .plus::before,
+.tech .plus::after {
+  content: '';
+  position: absolute;
+  background: #9a9a9a;
+}
+.tech .plus::before {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  transform: translateX(-50%);
+}
+.tech .plus::after {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  transform: translateY(-50%);
+}
+.tech .diag {
+  width: 1px;
+  height: 160vh;
+  left: 50%;
+  top: -30vh;
+  transform-origin: 50% 50%;
+  background: #e0e0e0;
+}
+
+/* ---------------------------------------------------------------- *
+ * 0 — Hero
+ * ---------------------------------------------------------------- */
+
+.hero {
+  height: 100vh;
+}
+.hero__inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero__title,
+.outro__title {
+  font-family: Nekst, sans-serif;
+  font-weight: 400;
+  font-size: var(--t-hero);
+  line-height: 0.8;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  display: flex;
+  gap: 0.14em;
+  color: var(--ink);
+}
+.st-char {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* The thin dial circle behind the watch, carried over from the loader. */
+.hero__ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 78vh;
+  height: 78vh;
+  pointer-events: none;
+}
+
+.hero__meta {
+  position: absolute;
+  left: 2.05vw;
+  bottom: 3.7vh;
+  font-size: var(--t-label);
+  line-height: 1.5;
+}
+.hero__meta span {
+  color: var(--ink-dim);
+  display: block;
+}
+
+.hero__model {
+  position: absolute;
+  left: 14.9vw;
+  bottom: 3.9vh;
+  font-family: Nekst, sans-serif;
+  font-weight: 400;
+  line-height: 0.86;
+  font-size: 4.2vw;
+}
+.hero__model b {
+  display: block;
+  font-weight: 400;
+  color: #9d9d9d;
+}
+.hero__model i {
+  display: block;
+  font-style: normal;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------- *
+ * 1 / 5 / 10 — big display stacks
+ * ---------------------------------------------------------------- */
+
+section.flow {
+  position: relative;
+  overflow: visible;
+}
+
+.bigtext {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.bigtext__wrap {
+  width: 80.5vw;
+  font-family: Nekst, sans-serif;
+  font-weight: 400;
+  font-size: var(--t-big);
+  line-height: 0.78;
+  letter-spacing: -0.012em;
+  text-transform: uppercase;
+}
+.bigtext__wrap > span {
+  display: block;
+  color: var(--line-off);
+  white-space: nowrap;
+}
+.bigtext__wrap > span.on {
+  color: var(--ink);
+}
+
+/* Per-line indents, lifted off the reference layout. */
+.bl-0 { margin-left: 0; }
+.bl-1 { margin-left: 50.33vw; }
+.bl-2 { margin-left: 13.33vw; }
+.bl-3 { margin-left: 0; }
+.bl-4 { margin-left: 0; }
+.bl-5 { margin-left: 9.58vw; }
+
+.dark .bigtext__wrap > span { color: #262626; }
+.dark .bigtext__wrap > span.on { color: #fff; }
+
+/* Dash glyph used inside FS—60P */
+.emdash {
+  display: inline-block;
+  width: 0.44em;
+  height: 0.055em;
+  background: currentColor;
+  vertical-align: 0.28em;
+  margin: 0 0.06em;
+}
+
+/* ---------------------------------------------------------------- *
+ * 2 — Case & Finishes (vertical marquee)
+ * ---------------------------------------------------------------- */
+
+.vmarquee {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 100%;
+  /* Wide enough to hold a 14vw glyph turned on its side — clipping to the
+     column width shows only a sliver of each letter. */
+  width: 34vw;
+  transform: translateX(-50%);
+  overflow: hidden;
+}
+/* vertical-rl + sideways gives exactly the effect the reference has —
+   glyphs turned 90 degrees, stacked top to bottom — without rotating each
+   letter by hand, which fights the line box and mis-spaces the column. */
+.vmarquee__track {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  writing-mode: vertical-rl;
+  text-orientation: sideways;
+  font-family: Nekst, sans-serif;
+  font-size: 14vw;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.vlabel {
+  position: absolute;
+  right: 4.5vw;
+  top: 50%;
+  font-family: Nekst, sans-serif;
+  font-size: 4.7vw;
+  line-height: 1;
+  color: var(--ink);
+  writing-mode: vertical-rl;
+  transform: translateY(-50%) rotate(180deg);
+  letter-spacing: -0.01em;
+}
+
+.pips {
+  position: absolute;
+  display: flex;
+  gap: 0.9vw;
+}
+.pips i {
+  display: block;
+  width: 3vw;
+  height: 3vw;
+  border-radius: 50%;
+  background: #d8d8d8;
+}
+
+/* ---------------------------------------------------------------- *
+ * 3 — Disassembly
+ * ---------------------------------------------------------------- */
+
+/* The ground the exploded parts float on: a hairline horizon plus a very
+   soft floor gradient below it. Without it the parts read as cut-outs. */
+.horizon {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.horizon::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 0, 0, 0.28) 18%,
+    rgba(0, 0, 0, 0.28) 82%,
+    transparent
+  );
+}
+.horizon::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.13), transparent 55%);
+}
+
+.explore-pill {
+  position: absolute;
+  left: 50%;
+  top: 5.2vh;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.75vw;
+  font-size: var(--t-label);
+  white-space: nowrap;
+  color: var(--ink);
+}
+.explore-pill em {
+  color: var(--ink-dim);
+  font-style: normal;
+}
+.explore-pill .ring {
+  width: 1.9vw;
+  height: 1.9vw;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.explore-pill .ring::after {
+  content: '';
+  width: 0.28vw;
+  height: 0.28vw;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+/* Leader line + rotated caption under each exploded part. */
+.leaders {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.leader {
+  position: absolute;
+  bottom: 3.2vh;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.leader .stem {
+  width: 1px;
+  background: rgba(0, 0, 0, 0.28);
+  margin-bottom: 0.6vh;
+}
+.leader .name {
+  font-size: var(--t-label);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  color: rgba(0, 0, 0, 0.75);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- *
+ * 4 — Mechanical heart
+ * ---------------------------------------------------------------- */
+
+.heart__title {
+  position: absolute;
+  left: 18vw;
+  top: 24vh;
+  font-family: Nekst, sans-serif;
+  font-size: 4.9vw;
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+.heart__title b {
+  display: block;
+  font-weight: 400;
+  color: #6f6f6f;
+}
+.heart__title i {
+  display: block;
+  font-style: normal;
+  color: #fff;
+}
+.heart__reserve {
+  position: absolute;
+  right: -1.5vw;
+  bottom: -6vh;
+  font-family: Nekst, sans-serif;
+  font-size: var(--t-counter);
+  line-height: 0.8;
+  color: #4a4a4a;
+  white-space: nowrap;
+}
+
+.on-dark .copy__label { color: rgba(255, 255, 255, 0.42); }
+.on-dark .copy__body { color: #fff; }
+.on-dark .counter { color: rgba(255, 255, 255, 0.6); }
+
+/* ---------------------------------------------------------------- *
+ * 6 / 8 / 9 — single-part sections
+ * ---------------------------------------------------------------- */
+
+.part__head {
+  position: absolute;
+  left: 50%;
+  top: 12.5vh;
+  transform: translateX(-50%);
+  width: 60vw;
+  text-align: center;
+}
+.part__title {
+  font-family: Nekst, sans-serif;
+  font-weight: 400;
+  font-size: var(--t-title);
+  line-height: 1.07;
+  letter-spacing: -0.012em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.part__title span {
+  display: block;
+}
+.part__title span:nth-child(2) {
+  margin-left: 4.2vw;
+}
+.part__caption {
+  margin-top: 3.4vh;
+  font-size: var(--t-body);
+  line-height: 1.45;
+  color: var(--ink);
+  width: 21vw;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---------------------------------------------------------------- *
+ * 10 — editions photo card
+ * ---------------------------------------------------------------- */
+
+.photo-card {
+  position: absolute;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #1a1a1a;
+  box-shadow: 0 2px 30px rgba(0, 0, 0, 0.12);
+}
+.photo-card canvas,
+.photo-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---------------------------------------------------------------- *
+ * 11 — colourways
+ * ---------------------------------------------------------------- */
+
+.colour {
+  position: absolute;
+  inset: 0;
+}
+.colour__ghost {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: Nekst, sans-serif;
+  font-size: 11.2vw;
+  line-height: 0.86;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: -0.012em;
+  color: rgba(255, 255, 255, 0.11);
+  white-space: nowrap;
+}
+.colour__name {
+  position: absolute;
+  left: 2.05vw;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--t-label);
+  color: rgba(255, 255, 255, 0.85);
+}
+.colour__index {
+  position: absolute;
+  right: 3.5vw;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--t-label);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ---------------------------------------------------------------- *
+ * 12 — model breakdown
+ * ---------------------------------------------------------------- */
+
+/* The MODEL / 146GR title holds for two screens before the table starts,
+   so the wipe on the numerals has room to read. */
+.model-hero {
+  height: 200vh;
+}
+
+.model__wrap {
+  position: absolute;
+  left: 10.6vw;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: Nekst, sans-serif;
+  font-size: var(--t-model);
+  line-height: 0.83;
+  letter-spacing: -0.012em;
+}
+.model__wrap b {
+  display: block;
+  font-weight: 400;
+  color: #a8a8a8;
+}
+.model__num {
+  display: block;
+  color: var(--ink);
+  overflow: hidden;
+}
+.model__num span {
+  display: inline-block;
+}
+
+.spec-card {
+  position: absolute;
+  right: 9.7vw;
+  width: 20vw;
+}
+.spec-card__photo {
+  width: 100%;
+  aspect-ratio: 294 / 186;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #202020;
+}
+.spec-card__chip {
+  margin-top: 1.7vh;
+  border: 1px solid rgba(0, 0, 0, 0.13);
+  border-radius: 6px;
+  padding: 1.1vw 1.2vw;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+.spec-card__chip .dot {
+  position: absolute;
+  left: 1.25vw;
+  top: 1.1vw;
+  width: 0.42vw;
+  height: 0.42vw;
+  border-radius: 50%;
+  background: #b8b8b8;
+}
+.spec-card__chip .txt {
+  margin-top: 1.4vw;
+  font-size: var(--t-label);
+  line-height: 1.35;
+}
+.spec-card__chip .txt em {
+  display: block;
+  font-style: normal;
+  color: var(--ink-dim);
+}
+
+.spec-table {
+  position: relative;
+  width: 100%;
+}
+.spec-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18.2vw 1fr 7.8vw 12vw 1fr 3.6vw;
+  align-items: center;
+  height: 5.2vw;
+  font-size: var(--t-label);
+}
+.spec-row .plus {
+  grid-column: 1;
+  justify-self: end;
+  padding-right: 3.9vw;
+  color: var(--ink);
+  font-size: 0.82vw;
+}
+.spec-row .nm {
+  grid-column: 2;
+  font-family: Nekst, sans-serif;
+  font-size: 1.72vw;
+  letter-spacing: -0.005em;
+}
+.spec-row .ix {
+  grid-column: 3;
+  color: #b4b4b4;
+}
+.spec-row .mech {
+  grid-column: 4;
+  color: #9a9a9a;
+}
+.spec-row .wt {
+  grid-column: 5;
+  justify-self: end;
+}
+.spec-row::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.14);
+  width: var(--rule, 0%);
+}
+
+.dial-glyph {
+  display: block;
+}
+.glyph-slot {
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- *
+ * Outro
+ * ---------------------------------------------------------------- */
+
+.outro {
+  height: 100vh;
+}
+.outro__inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------------------------------------------------------------- *
+ * Mobile — the composition is desktop-first; below 900px the copy
+ * columns collapse under the stage rather than beside it.
+ * ---------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  :root {
+    --t-label: 11px;
+    --t-body: 13px;
+    --t-micro: 9px;
+    --t-title: 9.5vw;
+    --t-big: 16vw;
+    --t-hero: 30vw;
+  }
+  .copy-col {
+    width: 42vw;
+  }
+  .part__caption {
+    width: 62vw;
+  }
+  .spec-row {
+    grid-template-columns: 8vw 1fr 0 0 1fr 4vw;
+    height: 11vw;
+  }
+  .spec-row .ix,
+  .spec-row .mech {
+    display: none;
+  }
+  .spec-row .nm {
+    font-size: 4.4vw;
+  }
+}

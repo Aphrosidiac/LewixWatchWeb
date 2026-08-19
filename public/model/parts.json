@@ -1,0 +1,559 @@
+{
+  "caliber": "ETA 6498-1",
+  "axis": "y",
+  "layerRange": [
+    -2.6,
+    6.0
+  ],
+  "tokens": {
+    "100": {
+      "layer": 0.0,
+      "material": "nickel",
+      "finish": "perlage"
+    },
+    "240": {
+      "layer": -1.0,
+      "material": "brass",
+      "finish": "radial"
+    },
+    "250": {
+      "layer": -1.4,
+      "material": "brass",
+      "finish": "radial"
+    },
+    "450": {
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush"
+    },
+    "453": {
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush"
+    },
+    "260": {
+      "layer": -1.0,
+      "material": "brass",
+      "finish": "radial"
+    },
+    "435": {
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush"
+    },
+    "443M": {
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush"
+    },
+    "440": {
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush"
+    },
+    "5445": {
+      "layer": -2.6,
+      "material": "screw",
+      "finish": "polish"
+    },
+    "5443": {
+      "layer": -2.6,
+      "material": "screw",
+      "finish": "polish"
+    },
+    "201": {
+      "layer": 1.0,
+      "material": "brass",
+      "finish": "radial"
+    },
+    "220": {
+      "layer": 1.0,
+      "material": "brass",
+      "finish": "radial"
+    },
+    "210": {
+      "layer": 1.0,
+      "material": "brass",
+      "finish": "radial"
+    },
+    "401": {
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush"
+    },
+    "410": {
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush"
+    },
+    "407": {
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush"
+    },
+    "110": {
+      "layer": 2.0,
+      "material": "nickel",
+      "finish": "cotes"
+    },
+    "5110": {
+      "layer": 2.6,
+      "material": "screw",
+      "finish": "polish"
+    },
+    "180": {
+      "layer": 1.0,
+      "material": "brass",
+      "finish": "radial"
+    },
+    "105M": {
+      "layer": 2.0,
+      "material": "nickel",
+      "finish": "cotes"
+    },
+    "5105": {
+      "layer": 2.6,
+      "material": "screw",
+      "finish": "polish"
+    },
+    "422": {
+      "layer": 3.0,
+      "material": "brass",
+      "finish": "radial"
+    },
+    "420": {
+      "layer": 3.0,
+      "material": "brass",
+      "finish": "radial"
+    },
+    "415": {
+      "layer": 3.0,
+      "material": "brass",
+      "finish": "radial"
+    },
+    "425": {
+      "layer": 3.0,
+      "material": "steel",
+      "finish": "brush"
+    },
+    "5415": {
+      "layer": 3.6,
+      "material": "screw",
+      "finish": "polish"
+    },
+    "5420": {
+      "layer": 3.6,
+      "material": "screw",
+      "finish": "polish"
+    },
+    "5425": {
+      "layer": 3.6,
+      "material": "screw",
+      "finish": "polish"
+    },
+    "705": {
+      "layer": 1.0,
+      "material": "pale",
+      "finish": "radial"
+    },
+    "710": {
+      "layer": 1.0,
+      "material": "pale",
+      "finish": "radial"
+    },
+    "125": {
+      "layer": 2.0,
+      "material": "nickel",
+      "finish": "cotes"
+    },
+    "5121": {
+      "layer": 6.0,
+      "material": "screw",
+      "finish": "polish"
+    },
+    "121": {
+      "layer": 5.0,
+      "material": "nickel",
+      "finish": "cotes"
+    },
+    "721": {
+      "layer": 4.0,
+      "material": "pale",
+      "finish": "radial"
+    },
+    "5125": {
+      "layer": 2.6,
+      "material": "screw",
+      "finish": "polish"
+    },
+    "303": {
+      "layer": 5.4,
+      "material": "pale",
+      "finish": "radial"
+    },
+    "Incabloc": {
+      "layer": 5.4,
+      "material": "ruby",
+      "finish": "none"
+    },
+    "445M": {
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush"
+    }
+  },
+  "parts": [
+    {
+      "name": "5443 Screw for setting lever",
+      "token": "5443",
+      "layer": -2.6,
+      "material": "screw",
+      "finish": "polish",
+      "triangles": 1198
+    },
+    {
+      "name": "5445 Screw for combined setting lever",
+      "token": "5445",
+      "layer": -2.6,
+      "material": "screw",
+      "finish": "polish",
+      "triangles": 655
+    },
+    {
+      "name": "401 Winding stem",
+      "token": "401",
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush",
+      "triangles": 25967
+    },
+    {
+      "name": "407 Winding pinion",
+      "token": "407",
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush",
+      "triangles": 5903
+    },
+    {
+      "name": "410 Sliding pinion",
+      "token": "410",
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush",
+      "triangles": 3179
+    },
+    {
+      "name": "435 Yoke",
+      "token": "435",
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush",
+      "triangles": 668
+    },
+    {
+      "name": "440 Yoke Spring Compressed",
+      "token": "440",
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush",
+      "triangles": 264
+    },
+    {
+      "name": "443M Setting Lever",
+      "token": "443M",
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush",
+      "triangles": 961
+    },
+    {
+      "name": "445M Setting Lever Jumper",
+      "token": "445M",
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush",
+      "triangles": 2325
+    },
+    {
+      "name": "450 Setting Wheel",
+      "token": "450",
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush",
+      "triangles": 3620
+    },
+    {
+      "name": "453 Intermediate Setting Wheel",
+      "token": "453",
+      "layer": -2.0,
+      "material": "steel",
+      "finish": "brush",
+      "triangles": 3620
+    },
+    {
+      "name": "250 Hour Wheel",
+      "token": "250",
+      "layer": -1.4,
+      "material": "brass",
+      "finish": "radial",
+      "triangles": 9698
+    },
+    {
+      "name": "240 Driver Cannon Pinion",
+      "token": "240",
+      "layer": -1.0,
+      "material": "brass",
+      "finish": "radial",
+      "triangles": 3011
+    },
+    {
+      "name": "260 Minute wheel",
+      "token": "260",
+      "layer": -1.0,
+      "material": "brass",
+      "finish": "radial",
+      "triangles": 10946
+    },
+    {
+      "name": "100 Main Plate",
+      "token": "100",
+      "layer": 0.0,
+      "material": "nickel",
+      "finish": "perlage",
+      "triangles": 25806
+    },
+    {
+      "name": "180 Movement barrel complete",
+      "token": "180",
+      "layer": 1.0,
+      "material": "brass",
+      "finish": "radial",
+      "triangles": 28033
+    },
+    {
+      "name": "201 Centre wheel",
+      "token": "201",
+      "layer": 1.0,
+      "material": "brass",
+      "finish": "radial",
+      "triangles": 21620
+    },
+    {
+      "name": "210 Third wheel",
+      "token": "210",
+      "layer": 1.0,
+      "material": "brass",
+      "finish": "radial",
+      "triangles": 23338
+    },
+    {
+      "name": "220 Second wheel",
+      "token": "220",
+      "layer": 1.0,
+      "material": "brass",
+      "finish": "radial",
+      "triangles": 21432
+    },
+    {
+      "name": "705 Escape wheel",
+      "token": "705",
+      "layer": 1.0,
+      "material": "pale",
+      "finish": "radial",
+      "triangles": 3779
+    },
+    {
+      "name": "710 Pallet fork",
+      "token": "710",
+      "layer": 1.0,
+      "material": "pale",
+      "finish": "radial",
+      "triangles": 1540
+    },
+    {
+      "name": "105M Barrel bridge",
+      "token": "105M",
+      "layer": 2.0,
+      "material": "nickel",
+      "finish": "cotes",
+      "triangles": 8000
+    },
+    {
+      "name": "110 Train wheel bridge",
+      "token": "110",
+      "layer": 2.0,
+      "material": "nickel",
+      "finish": "cotes",
+      "triangles": 4975
+    },
+    {
+      "name": "125 Pallet bridge",
+      "token": "125",
+      "layer": 2.0,
+      "material": "nickel",
+      "finish": "cotes",
+      "triangles": 3304
+    },
+    {
+      "name": "5105 Screw for barrel bridge",
+      "token": "5105",
+      "layer": 2.6,
+      "material": "screw",
+      "finish": "polish",
+      "triangles": 675
+    },
+    {
+      "name": "5105 Screw for barrel bridge 2",
+      "token": "5105",
+      "layer": 2.6,
+      "material": "screw",
+      "finish": "polish",
+      "triangles": 675
+    },
+    {
+      "name": "5105 Screw for barrel bridge 3",
+      "token": "5105",
+      "layer": 2.6,
+      "material": "screw",
+      "finish": "polish",
+      "triangles": 675
+    },
+    {
+      "name": "5110 Screw for train wheel bridge",
+      "token": "5110",
+      "layer": 2.6,
+      "material": "screw",
+      "finish": "polish",
+      "triangles": 675
+    },
+    {
+      "name": "5110 Screw for train wheel bridge 2",
+      "token": "5110",
+      "layer": 2.6,
+      "material": "screw",
+      "finish": "polish",
+      "triangles": 675
+    },
+    {
+      "name": "5125 Screw for pallet bridge",
+      "token": "5125",
+      "layer": 2.6,
+      "material": "screw",
+      "finish": "polish",
+      "triangles": 701
+    },
+    {
+      "name": "5125 Screw for pallet bridge 2",
+      "token": "5125",
+      "layer": 2.6,
+      "material": "screw",
+      "finish": "polish",
+      "triangles": 701
+    },
+    {
+      "name": "415 Ratchet wheel",
+      "token": "415",
+      "layer": 3.0,
+      "material": "brass",
+      "finish": "radial",
+      "triangles": 10794
+    },
+    {
+      "name": "420 Crown wheel",
+      "token": "420",
+      "layer": 3.0,
+      "material": "brass",
+      "finish": "radial",
+      "triangles": 7476
+    },
+    {
+      "name": "422 Crown wheel ring",
+      "token": "422",
+      "layer": 3.0,
+      "material": "brass",
+      "finish": "radial",
+      "triangles": 368
+    },
+    {
+      "name": "425 Click",
+      "token": "425",
+      "layer": 3.0,
+      "material": "steel",
+      "finish": "brush",
+      "triangles": 636
+    },
+    {
+      "name": "5415 Screw for ratchet wheel",
+      "token": "5415",
+      "layer": 3.6,
+      "material": "screw",
+      "finish": "polish",
+      "triangles": 1585
+    },
+    {
+      "name": "5420 Screw for crown wheel",
+      "token": "5420",
+      "layer": 3.6,
+      "material": "screw",
+      "finish": "polish",
+      "triangles": 1603
+    },
+    {
+      "name": "5425 Screw for click",
+      "token": "5425",
+      "layer": 3.6,
+      "material": "screw",
+      "finish": "polish",
+      "triangles": 1789
+    },
+    {
+      "name": "721 Balance",
+      "token": "721",
+      "layer": 4.0,
+      "material": "pale",
+      "finish": "radial",
+      "triangles": 8768
+    },
+    {
+      "name": "121 Balancing bridge",
+      "token": "121",
+      "layer": 5.0,
+      "material": "nickel",
+      "finish": "cotes",
+      "triangles": 2026
+    },
+    {
+      "name": "303 Two\u2013piece regulator with pointer",
+      "token": "303",
+      "layer": 5.4,
+      "material": "pale",
+      "finish": "radial",
+      "triangles": 3379
+    },
+    {
+      "name": "Incabloc over",
+      "token": "Incabloc",
+      "layer": 5.4,
+      "material": "ruby",
+      "finish": "none",
+      "triangles": 3046
+    },
+    {
+      "name": "Incabloc under",
+      "token": "Incabloc",
+      "layer": 5.4,
+      "material": "ruby",
+      "finish": "none",
+      "triangles": 3462
+    },
+    {
+      "name": "5121 Screw for balance bridge",
+      "token": "5121",
+      "layer": 6.0,
+      "material": "screw",
+      "finish": "polish",
+      "triangles": 696
+    }
+  ]
+}

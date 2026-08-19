@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ETA 6498-1 — Movement Viewer</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+
+    <div id="loader" class="loader">
+      <div class="loader__bar"><span id="loaderFill"></span></div>
+      <div class="loader__pct" id="loaderPct">0%</div>
+    </div>
+
+    <header class="meta">
+      <div class="meta__caliber">ETA 6498-1</div>
+      <div class="meta__sub" id="metaSub">Manual-winding movement</div>
+    </header>
+
+    <div class="readout" id="readout"><span>&nbsp;</span></div>
+
+    <div class="controls">
+      <button id="explodeBtn" class="btn" aria-pressed="false">
+        <span class="btn__dot"></span>
+        <span class="btn__label">Exploded view</span>
+      </button>
+
+      <label class="slider">
+        <input id="explodeRange" type="range" min="0" max="100" value="0" />
+      </label>
+
+      <button id="finishBtn" class="btn" aria-pressed="true">
+        <span class="btn__dot"></span>
+        <span class="btn__label" id="finishLabel">Finished</span>
+      </button>
+
+      <button id="spinBtn" class="btn btn--ghost" aria-pressed="true">
+        <span class="btn__label">Auto-rotate</span>
+      </button>
+
+      <button id="resetBtn" class="btn btn--ghost">
+        <span class="btn__label">Reset</span>
+      </button>
+    </div>
+
+    <div class="hint">Drag to orbit &middot; scroll to zoom &middot; right-drag to pan</div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

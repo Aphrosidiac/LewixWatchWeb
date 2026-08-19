@@ -50,13 +50,15 @@ legible.
 **Steen Winther**. All credit for the CAD work is theirs; nothing in `source/`
 was authored here.
 
-> **This repository is private, and should stay that way unless the CAD is
-> removed.** GrabCAD's terms cover downloading and using models as a member,
-> not redistributing them. Publishing `source/` — or `public/model/watch.glb`,
-> which is derived from it — would republish someone else's work.
+> **On redistribution.** GrabCAD's terms cover downloading and using models as
+> a member; they do not grant a right to redistribute. `source/` and the
+> derived `public/model/watch.glb` are mirrored here for reproducibility of the
+> pipeline, with attribution and no claim of authorship. If Steen Winther or
+> GrabCAD would rather they weren't, open an issue and they come out — the
+> pipeline in `scripts/` is the original work here and stands without them.
 >
-> The calibre is also a real Swatch Group product. Keep any public-facing use
-> editorial and unbranded.
+> The calibre is a real Swatch Group product. This is an unaffiliated technical
+> demo; keep any public-facing use editorial and unbranded.
 
 Most of that folder is `.sldprt` / `.sldasm` — proprietary SolidWorks binaries
 with no free macOS reader. **They are not used.** The pipeline reads

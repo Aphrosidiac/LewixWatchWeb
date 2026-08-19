@@ -25,7 +25,7 @@ const DEG = Math.PI / 180
    coordinate frames. */
 const SUBJECTS = [
   ['hero', 0, 'watch'],
-  ['disassembly', 0.07, 'movement'],
+  ['disassembly', 0.04, 'movement'],
   ['precise', 0.02, 'watch'],
   ['bracelet', 0.03, 'bracelet'],
   // Clear the stage before the next section's headline scrolls in — the
@@ -55,19 +55,24 @@ const KEYS = [
   { at: ['case', 0.55], rx: 0, ry: -424 * DEG, s: 1.54, x: -0.03 },
   { at: ['case', 0.78], rx: 0, ry: -448 * DEG, s: 1.6, x: -0.03 },
   { at: ['case', 1], rx: 0, ry: -450 * DEG, s: 1.66, x: -0.02 },
-  // held edge-on right up to the cut, so the swap lands on a sliver
-  { at: ['disassembly', 0.07], rx: 0, ry: -450 * DEG, s: 1.66, x: -0.02 },
+  // held edge-on right up to the hand-off
+  { at: ['disassembly', 0.04], focus: 1, rx: 0, ry: -450 * DEG, s: 1.62, x: 0.1, y: 0 },
 
   // ---- movement: disassembly -> mechanical heart -----------------------
-  // The rig's base already stands the movement up facing camera, so ry here
-  // is a turn away from the viewer and rx is a tip toward the top-down.
-  { at: ['disassembly', 0.07], subject: 'movement', rx: 0, ry: -90 * DEG, rz: 0, x: 0, y: 0, z: 0, s: 1.5, explode: 0 },
-  { at: ['disassembly', 0.17], rx: -4 * DEG, ry: -56 * DEG, s: 1.62, x: 0.06, z: 0.7, explode: 0.34 },
-  { at: ['disassembly', 0.31], rx: -3 * DEG, ry: -22 * DEG, s: 1.5, x: 0.02, z: 0.35, explode: 0.82 },
-  { at: ['disassembly', 0.45], rx: -1 * DEG, ry: -7 * DEG, s: 1.2, x: 0, z: 0, explode: 1 },
-  { at: ['disassembly', 0.62], rx: -1 * DEG, ry: -4 * DEG, s: 1.2, x: -0.01, z: 0, explode: 1 },
-  { at: ['disassembly', 0.8], rx: 0, ry: 5 * DEG, s: 1.55, x: -0.14, z: 1.15, explode: 1.2 },
-  { at: ['disassembly', 1], rx: 5 * DEG, ry: 0, s: 0.9, x: 0, z: 0, explode: 0.02 },
+  // The watch is still here. `focus: 1` parks the case on the rig origin,
+  // which is exactly where the movement sits, so the parts start inside the
+  // case and are drawn out of it along the case axis. The rig barely turns
+  // through the pull-out — the plates stay near edge-on, which is what makes
+  // it read as a teardown rather than a fanned-out chart.
+  { at: ['disassembly', 0.04], subject: 'movement', focus: 1, rx: 0, ry: -450 * DEG, rz: 0, x: 0.1, y: 0, z: 0, s: 1.62, explode: 0, fade: 0 },
+  { at: ['disassembly', 0.16], ry: -446 * DEG, s: 1.42, x: 0.2, explode: 0.4, fade: 0 },
+  { at: ['disassembly', 0.3], ry: -442 * DEG, s: 1.2, x: 0.24, explode: 0.75, fade: 0 },
+  // The watch leaves quickly once the row is established. Lingering on a
+  // half-transparent case just looks like a rendering fault.
+  { at: ['disassembly', 0.42], ry: -438 * DEG, s: 1.28, x: 0.2, y: -0.06, explode: 1, fade: 1 },
+  { at: ['disassembly', 0.64], ry: -436 * DEG, s: 1.45, x: 0.13, y: -0.09, explode: 1, fade: 1 },
+  { at: ['disassembly', 0.8], rx: 2 * DEG, ry: -432 * DEG, s: 2.0, x: -0.24, z: 1.1, explode: 1.15, fade: 1 },
+  { at: ['disassembly', 1], rx: 5 * DEG, ry: -360 * DEG, s: 0.9, x: 0, z: 0, explode: 0.02, fade: 1 },
 
   { at: ['heart', 0.06], rx: 6 * DEG, ry: 0, s: 0.88, y: 0, explode: 0 },
   { at: ['heart', 0.3], rx: 16 * DEG, ry: -14 * DEG, s: 0.95, y: 0.01 },
@@ -124,12 +129,24 @@ const KEYS = [
   { at: ['outro', 1], rx: -3 * DEG, ry: -34 * DEG, s: 0.92 },
 ]
 
-const CHANNELS = ['rx', 'ry', 'rz', 'x', 'y', 'z', 's', 'explode', 'focus']
+const CHANNELS = ['rx', 'ry', 'rz', 'x', 'y', 'z', 's', 'explode', 'focus', 'fade']
 
 const smoothstep = (t) => t * t * (3 - 2 * t)
 const clamp01 = (t) => (t < 0 ? 0 : t > 1 ? 1 : t)
 
 /* ------------------------------------------------------------------ */
+
+/* The calibre relative to the watch it comes out of. Measured, not guessed:
+   at 0.62 the main plate rendered barely half the dial's diameter, which
+   reads as a toy rattling around inside the case. A real 6498 fills about
+   four fifths of the dial. */
+const MOVEMENT_FIT = 0.95
+
+/* Spacing between assembly layers at full explode, in the movement's own
+   units. The ETA's layers run -2.6 to +6, so this spreads the stack across
+   roughly three world units — a bit under the frame width at the section's
+   working scale. */
+const LAYER_GAP = 0.28
 
 function normalise(obj, target = 1) {
   const box = new THREE.Box3().setFromObject(obj)
@@ -401,10 +418,15 @@ export async function createScene(canvas, onProgress) {
   normalise(movement, 1)
   const movementBase = new THREE.Group()
   movementBase.add(movement)
-  // The calibre is modelled with its stacking axis on Y (see parts.json),
-  // i.e. lying flat. Stand it up so the plate faces the camera; every pose
-  // key for this subject is then a tilt away from front-on.
-  movementBase.rotation.x = -Math.PI / 2
+  // The calibre stacks along its local Y (see parts.json). Point that axis
+  // down the RIG's Z, which is exactly where the watch's dial normal points —
+  // so however the composition turns, the parts always separate along the
+  // case axis, the way they would actually be lifted out. Standing the
+  // movement up to face the camera and sliding the parts sideways instead
+  // gives a diagram, not a disassembly.
+  movementBase.rotation.x = Math.PI / 2
+  // Sized to sit inside the case, because that is where it starts.
+  movementBase.scale.setScalar(MOVEMENT_FIT)
   movementRig.add(movementBase)
 
   // Cache each part's rest position so the explode can be a pure offset.
@@ -433,6 +455,7 @@ export async function createScene(canvas, onProgress) {
     { upto: Infinity, column: 5 }, // balance, regulator, shock setting
   ]
   const nCol = EXPLODE_LABELS.length
+  const layerMax = Math.max(...movementParts.map((p) => p.layer))
   const _s = new THREE.Vector3()
   let wSum = 0
   let wSlot = 0
@@ -695,6 +718,40 @@ export async function createScene(canvas, onProgress) {
     return canvas
   }
 
+  let watchAlpha = 1
+  /**
+   * Retire the watch once the exploded row owns the frame.
+   *
+   * Transparency is switched on only while the fade is actually running: the
+   * watch is ~50 materials, and leaving them all transparent buys a depth
+   * sort every frame for the whole rest of the page.
+   */
+  function setWatchOpacity(v) {
+    if (Math.abs(v - watchAlpha) < 0.002) return
+    watchAlpha = v
+    const opaque = v > 0.998
+    watchBase.traverse((o) => {
+      if (!o.isMesh || !o.material) return
+      const m = o.material
+      if (opaque) {
+        if (m.userData.wasTransparent !== undefined) {
+          m.transparent = m.userData.wasTransparent
+          m.opacity = 1
+          m.needsUpdate = true
+        }
+        return
+      }
+      if (m.userData.wasTransparent === undefined) m.userData.wasTransparent = m.transparent
+      if (!m.transparent) {
+        m.transparent = true
+        m.needsUpdate = true
+      }
+      // The crystal is already see-through; fading it on the same curve as
+      // the steel makes it vanish first and leaves a floating dial behind.
+      m.opacity = m.transmission > 0 ? Math.min(1, v * 1.4) : v
+    })
+  }
+
   function setDarkness(v) {
     if (Math.abs(v - state.darkness) < 0.002) return
     state.darkness = v
@@ -721,8 +778,13 @@ export async function createScene(canvas, onProgress) {
 
     const world = worldPerScreen()
 
-    watchRig.visible = pose.subject === 'watch'
+    // The watch is still on stage for the first half of the disassembly —
+    // the parts have to come out of something. `fade` retires it once the
+    // exploded row has taken over the frame.
+    const withWatch = pose.subject === 'movement' && pose.fade < 0.999
+    watchRig.visible = pose.subject === 'watch' || withWatch
     movementRig.visible = pose.subject === 'movement'
+    if (watchRig.visible) setWatchOpacity(withWatch ? 1 - pose.fade : 1)
     braceletRig.visible = pose.subject === 'bracelet'
     lineupRig.visible = pose.subject === 'lineup'
 
@@ -764,13 +826,12 @@ export async function createScene(canvas, onProgress) {
       const e = pose.explode
       for (const p of movementParts) {
         p.mesh.position.copy(p.home)
-        // Spread along the rig's X, which stays camera-right through the
-        // whole section, and collapse the assembled stacking offset as the
-        // parts separate so the exploded state lands as a flat elevation
-        // rather than a receding queue.
-        p.mesh.position.x += (p.slot - slotBias) * 3.7 * e
-        p.mesh.position.y *= Math.max(0, 1 - e * 0.75)
-        p.mesh.position.z += Math.sin(p.slot * 31.7) * 0.01 * e
+        // One-directional, anchored at the caseback: every part travels out
+        // the dial side, the way it would actually be lifted off, so the
+        // train side stays put and the dial side ends up furthest away. A
+        // symmetrical fan would have half the calibre pushing back through
+        // the case it is supposedly coming out of.
+        p.mesh.position.y += (layerMax - p.layer) * LAYER_GAP * e
       }
       dressForSelection()
     }
@@ -903,6 +964,7 @@ export async function createScene(canvas, onProgress) {
     setDarkness,
     applyColourway,
     productShot,
+    setWatchOpacity,
     pickColumn,
     columnWorldX,
     columnScreenX,

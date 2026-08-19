@@ -93,6 +93,27 @@ where the story wants it centre stage. Instead the page goes dark and the
 watch's `envMapIntensity` is pulled down so it reads gunmetal, while the
 movement stays fully lit.
 
+### The disassembly comes out of the watch
+
+The parts separate along the **case axis**, not along an arbitrary screen
+direction: the calibre's stacking axis is pointed down the rig's Z, which is
+exactly where the watch's dial normal points, so however the composition turns
+the plates always part the way they would actually be lifted out — sideways,
+seen near edge-on. Standing the movement up to face the camera and sliding the
+parts apart gives a diagram; this gives a teardown.
+
+The watch stays on stage while that happens. `focus: 1` parks the case on the
+rig origin, which is where the movement already sits, so the parts start
+*inside* the case and are drawn out of it. A `fade` channel retires the watch
+once the exploded row owns the frame — transparency is switched on only while
+that fade runs, since the watch is ~50 materials and leaving them transparent
+would cost a depth sort every frame for the rest of the page.
+
+The fan is one-directional, anchored at the caseback: every part travels out
+the dial side, so the train side stays put and the dial side ends up furthest
+away. A symmetrical fan would have half the calibre pushing back through the
+case it is supposedly coming out of.
+
 ### The disassembly is interactive
 
 Three gestures share one pointer inside the exploded view, told apart by

@@ -122,14 +122,27 @@ html.lenis body {
   height: 100%;
 }
 
+/* #root deliberately has NO z-index: giving it one would trap the
+   disassembly UI inside its stacking context, where nothing can rise above
+   the canvas. Sections carry the index instead. */
 #root {
   position: relative;
-  z-index: 1;
 }
 
 section {
   position: relative;
+  z-index: 1;
   width: 100%;
+}
+
+/* The one layer that sits ABOVE the canvas: the disassembly controls. Fixed,
+   so it escapes #root and lands in the root stacking context. Everything
+   inside starts click-through and opts back in. */
+.uilayer {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
 }
 
 /* Sticky viewport-sized stage inside a tall section. */
@@ -514,11 +527,41 @@ section.flow {
   background: rgba(0, 0, 0, 0.55);
 }
 
+.explore-pill .touch-only {
+  display: none;
+}
+@media (hover: none) {
+  .explore-pill .pointer-only {
+    display: none;
+  }
+  .explore-pill .touch-only {
+    display: inline;
+  }
+}
+
+/* The stage only takes the pointer while the parts are actually spread; the
+   rest of the page has to stay scrollable through the canvas. */
+#canvas-wrapper.is-interactive {
+  pointer-events: auto;
+  cursor: grab;
+  /* pan-y, not none: horizontal drags orbit the stack, vertical ones still
+     scroll. Taking the whole gesture would leave a touch user stranded in the
+     middle of the page with no way out. */
+  touch-action: pan-y;
+}
+#canvas-wrapper.is-interactive.is-over {
+  cursor: pointer;
+}
+#canvas-wrapper.is-dragging {
+  cursor: grabbing;
+}
+
 /* Leader line + rotated caption under each exploded part. */
 .leaders {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  z-index: 3;
 }
 .leader {
   position: absolute;
@@ -527,6 +570,31 @@ section.flow {
   display: flex;
   flex-direction: column;
   align-items: center;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.leader .stem {
+  transition: background 0.25s ease;
+}
+.leader .name {
+  transition: color 0.25s ease;
+}
+.leader.is-dim .stem {
+  background: rgba(0, 0, 0, 0.12);
+}
+.leader.is-dim .name {
+  color: rgba(0, 0, 0, 0.3);
+}
+.leader.is-active .stem {
+  background: rgba(0, 0, 0, 0.6);
+}
+.leader.is-active .name {
+  color: #000;
 }
 .leader .stem {
   width: 1px;
@@ -539,6 +607,112 @@ section.flow {
   transform: rotate(180deg);
   color: rgba(0, 0, 0, 0.75);
   white-space: nowrap;
+}
+
+/* Hold-to-explore badge: the ring draws round as the press is held, so the
+   gesture has a visible dwell rather than happening silently. */
+.badge--hold {
+  position: absolute;
+  overflow: visible;
+}
+.badge__ring {
+  position: absolute;
+  inset: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+.badge__ring circle {
+  fill: none;
+  stroke: #000;
+  stroke-width: 2;
+  stroke-dasharray: 308;
+  stroke-dashoffset: 308;
+}
+.badge--hold {
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.badge--hold.is-armed {
+  border-color: transparent;
+}
+body.is-holding .badge--hold {
+  color: #000;
+}
+
+/* Part detail card */
+.partcard {
+  position: absolute;
+  right: 9vw;
+  top: 50%;
+  width: 20.5vw;
+  transform: translateY(-50%) translateY(1.6vh);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+  z-index: 4;
+}
+.partcard.is-open {
+  opacity: 1;
+  transform: translateY(-50%);
+  pointer-events: auto;
+}
+.partcard__close {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55vw;
+  border: 0;
+  background: none;
+  padding: 0 0 2.1vh;
+  font-family: inherit;
+  font-size: var(--t-label);
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.partcard__close:hover {
+  color: var(--ink);
+}
+.partcard__close .x {
+  position: relative;
+  width: 0.62vw;
+  height: 0.62vw;
+}
+.partcard__close .x::before,
+.partcard__close .x::after {
+  content: '';
+  position: absolute;
+  inset: 50% 0 auto 0;
+  height: 1px;
+  background: currentColor;
+}
+.partcard__close .x::before {
+  transform: rotate(45deg);
+}
+.partcard__close .x::after {
+  transform: rotate(-45deg);
+}
+.partcard__row + .partcard__row {
+  margin-top: 2.4vh;
+}
+.partcard__label {
+  font-size: var(--t-label);
+  color: var(--ink-dim);
+  padding-bottom: 0.9vh;
+  border-top: 1px solid rgba(0, 0, 0, 0.16);
+  padding-top: 1.1vh;
+}
+.partcard__name {
+  font-family: Nekst, sans-serif;
+  font-size: 2.1vw;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.partcard__fn {
+  font-size: var(--t-body);
+  line-height: 1.4;
+  color: var(--ink);
 }
 
 /* ---------------------------------------------------------------- *
@@ -850,5 +1024,35 @@ section.flow {
   }
   .spec-row .nm {
     font-size: 4.4vw;
+  }
+  .partcard {
+    right: 0;
+    left: 0;
+    width: auto;
+    top: auto;
+    bottom: 10vh;
+    padding: 6vh 6vw 3vh;
+    transform: translateY(1.6vh);
+    /* On a phone the card lands on top of the parts rather than beside them,
+       so it needs its own ground to stay readable. A soft lift rather than a
+       panel, to keep it in the same language as the rest of the page. */
+    background: linear-gradient(
+      180deg,
+      transparent,
+      rgba(255, 255, 255, 0.62) 12%,
+      rgba(255, 255, 255, 0.8)
+    );
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+  }
+  .partcard.is-open {
+    transform: translateY(0);
+  }
+  .partcard__name {
+    font-size: 7vw;
+  }
+  .partcard__close .x {
+    width: 9px;
+    height: 9px;
   }
 }

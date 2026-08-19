@@ -2,7 +2,7 @@ import './style.css'
 import Lenis from 'lenis'
 import { createScene } from './scene.js'
 import { buildDOM, measure } from './dom.js'
-import { COLOURWAYS, EXPLODE_LABELS } from './content.js'
+import { COLOURWAYS, EXPLODE_LABELS, EXPLODE_PARTS } from './content.js'
 
 /* ------------------------------------------------------------------ *
  * Helpers
@@ -82,6 +82,13 @@ const els = {
   pips: $('.pips'),
   leaders: $$('#sec-disassembly .leader'),
   pill: $('#sec-disassembly .explore-pill'),
+  uilayer: $('#sec-disassembly .uilayer'),
+  holdBadge: $('#holdBadge'),
+  holdRing: $('#holdBadge .badge__ring circle'),
+  partCard: $('#partCard'),
+  partName: $('#partName'),
+  partFn: $('#partFn'),
+  partClose: $('#partClose'),
   reserve: $('.heart__reserve'),
   heartTitle: $('.heart__title'),
   editionCard: $('#editionCard'),
@@ -148,6 +155,23 @@ function setLoader(p) {
   lenis = new Lenis({ duration: 4 })
   window.__lenis = lenis
   window.__scene = api
+  // Handles for driving the page by hand. Necessary rather than convenient:
+  // in an automated browser the tab is usually hidden, which throttles
+  // requestAnimationFrame to about 1Hz and makes anything scroll-driven
+  // impossible to observe from the outside.
+  window.__tick = (y) => {
+    // Optional scroll override: tick() reads the module's own `scrollY`,
+    // which only the rAF loop refreshes, so driving the page by hand has to
+    // set it explicitly or every DOM effect silently runs on a stale value.
+    if (y != null) {
+      scrollY = y
+      window.scrollTo(0, y)
+    }
+    tick(performance.now() / 1000)
+    api.render()
+  }
+
+  bindInteraction()
 
   // Prime one frame before revealing, so the first paint already has the
   // watch composed rather than flashing an empty stage.
@@ -315,6 +339,7 @@ function tick(time) {
   /* ---- disassembly labels ------------------------------------------- */
   {
     const p = prog('disassembly')
+    const r = ranges.disassembly
     const show = band(p, 0.32, 0.44) * (1 - band(p, 0.7, 0.8))
     if (els.pill) els.pill.style.opacity = String(show)
     els.leaders.forEach((el, i) => {
@@ -333,6 +358,14 @@ function tick(time) {
     // as a hard band.
     const horizon = sec('disassembly').querySelector('.horizon')
     if (horizon) horizon.style.opacity = String(band(p, 0.1, 0.25) * (1 - band(p, 0.6, 0.75)))
+
+    // The UI layer is fixed and full-viewport, so park it when the section is
+    // nowhere near — otherwise it stays in the paint tree for the whole page.
+    if (els.uilayer && r) {
+      const near = scrollY > r.top - vh && scrollY < r.bottom + vh
+      els.uilayer.style.visibility = near ? 'visible' : 'hidden'
+    }
+    driveInteraction(p)
   }
 
   /* ---- mechanical heart --------------------------------------------- */
@@ -482,4 +515,212 @@ function activateCopy(id, thresholds) {
     const fadeOut = 1 - band(p, 0.82, 0.96)
     el.style.opacity = String(lerp(0.25, 1, on * off) * fadeOut)
   })
+}
+
+
+/* ------------------------------------------------------------------ *
+ * Disassembly interaction
+ *
+ * Three gestures share one pointer: drag orbits the stack, a tap selects a
+ * part, and a press-and-hold pushes the camera in with the page scroll
+ * stopped. They are told apart by movement and time, resolved on pointerup,
+ * so nothing commits until the gesture is actually over.
+ * ------------------------------------------------------------------ */
+
+const HOLD_MS = 420 // press this long without moving and it becomes a hold
+const DRAG_SLOP = 6 // px of movement before a tap becomes a drag
+const RING_LENGTH = 308 // circumference of the badge ring at r=49
+
+const gesture = {
+  down: false,
+  moved: false,
+  holding: false,
+  startX: 0,
+  startY: 0,
+  lastX: 0,
+  lastY: 0,
+  downAt: 0,
+}
+
+let interactive = false
+
+/** Is the stage currently offering itself to the pointer? */
+function setInteractive(on) {
+  if (on === interactive) return
+  interactive = on
+  stage.classList.toggle('is-interactive', on)
+  if (!on) {
+    endHold()
+    selectColumn(-1)
+    api.state.hover = -1
+    api.state.orbitTarget.set(0, 0)
+    api.state.liftTarget = 0
+  }
+}
+
+function syncDolly() {
+  api.state.dollyTarget = gesture.holding ? 1.15 : api.state.selected >= 0 ? 0.5 : 0
+}
+
+function selectColumn(col) {
+  const st = api.state
+  if (st.selected === col) return
+  st.selected = col
+
+  if (col >= 0) {
+    const part = EXPLODE_PARTS[col] || { name: EXPLODE_LABELS[col], fn: '' }
+    els.partName.textContent = part.name
+    els.partFn.textContent = part.fn
+    els.partCard.classList.add('is-open')
+    els.partCard.setAttribute('aria-hidden', 'false')
+
+    const world = api.worldPerScreen()
+    if (window.innerWidth < 900) {
+      // On a phone the card is full width along the bottom, so there is no
+      // "beside" to move the part to — lift the stack into the top half
+      // instead and leave it horizontally where it is.
+      st.panTarget = st.pan + (api.columnWorldX(col) - 0)
+      st.liftTarget = 0.24 * world.h
+    } else {
+      // Slide the chosen column left of centre so the card has clear space.
+      // Computed once, from where the column is right now, so it cannot chase
+      // its own output frame to frame.
+      st.panTarget = st.pan + (api.columnWorldX(col) - -0.16 * world.w)
+      st.liftTarget = 0
+    }
+  } else {
+    els.partCard.classList.remove('is-open')
+    els.partCard.setAttribute('aria-hidden', 'true')
+    st.panTarget = 0
+    st.liftTarget = 0
+  }
+  syncDolly()
+}
+
+function beginHold() {
+  if (gesture.holding || !interactive) return
+  gesture.holding = true
+  lenis?.stop()
+  document.body.classList.add('is-holding')
+  syncDolly()
+}
+
+function endHold() {
+  if (!gesture.holding) return
+  gesture.holding = false
+  lenis?.start()
+  document.body.classList.remove('is-holding')
+  syncDolly()
+}
+
+function onDown(e) {
+  if (!interactive) return
+  gesture.down = true
+  gesture.moved = false
+  gesture.startX = gesture.lastX = e.clientX
+  gesture.startY = gesture.lastY = e.clientY
+  gesture.downAt = performance.now()
+}
+
+function onMove(e) {
+  if (!interactive) return
+
+  if (!gesture.down) {
+    const col = api.pickColumn(e.clientX, e.clientY)
+    api.state.hover = col
+    stage.classList.toggle('is-over', col >= 0)
+    return
+  }
+
+  const dx = e.clientX - gesture.lastX
+  const dy = e.clientY - gesture.lastY
+  gesture.lastX = e.clientX
+  gesture.lastY = e.clientY
+
+  if (
+    !gesture.moved &&
+    Math.hypot(e.clientX - gesture.startX, e.clientY - gesture.startY) > DRAG_SLOP
+  ) {
+    gesture.moved = true
+    stage.classList.add('is-dragging')
+  }
+
+  if (!gesture.moved) return
+
+  // Deliberately shallow. This is a nudge to see round a part, not a
+  // turntable — let it swing far and the carefully aimed elevation is gone.
+  const st = api.state
+  st.orbitTarget.x = clampAbs(st.orbitTarget.x + dx * 0.0022, 0.6)
+  st.orbitTarget.y = clampAbs(st.orbitTarget.y + dy * 0.0016, 0.26)
+}
+
+function onUp(e) {
+  const wasHolding = gesture.holding
+  const moved = gesture.moved
+  endHold()
+  gesture.down = false
+  gesture.moved = false
+  stage.classList.remove('is-dragging')
+  if (!interactive) return
+
+  // A drag or a hold consumes the gesture; only a clean tap selects.
+  if (moved || wasHolding) return
+  const col = api.pickColumn(e.clientX, e.clientY)
+  selectColumn(col === api.state.selected ? -1 : col)
+}
+
+const clampAbs = (v, m) => (v > m ? m : v < -m ? -m : v)
+
+const stage = document.getElementById('canvas-wrapper')
+
+function bindInteraction() {
+  stage.addEventListener('pointerdown', onDown)
+  window.addEventListener('pointermove', onMove)
+  window.addEventListener('pointerup', onUp)
+  window.addEventListener('pointercancel', onUp)
+
+  els.partClose?.addEventListener('click', () => selectColumn(-1))
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') selectColumn(-1)
+  })
+
+  // The captions are buttons too — the gesture should not be the only way in,
+  // and they are the part of this that works with a keyboard.
+  els.leaders.forEach((el) => {
+    const i = Number(el.dataset.i)
+    el.addEventListener('click', () => selectColumn(api.state.selected === i ? -1 : i))
+    el.addEventListener('pointerenter', () => {
+      if (interactive) api.state.hover = i
+    })
+    el.addEventListener('pointerleave', () => {
+      if (interactive && api.state.hover === i) api.state.hover = -1
+    })
+  })
+}
+
+/** Called every frame from tick() while the disassembly section is on screen. */
+function driveInteraction(p) {
+  // Only offer the pointer while the parts are actually spread out. Outside
+  // that window the canvas has to stay click-through or the page stops
+  // scrolling under the cursor.
+  setInteractive(p > 0.3 && p < 0.76)
+
+  const st = api.state
+  const active = st.selected >= 0 ? st.selected : st.hover
+  els.leaders.forEach((el, i) => {
+    el.classList.toggle('is-active', active >= 0 && i === active)
+    el.classList.toggle('is-dim', active >= 0 && i !== active)
+  })
+
+  // The hold is detected here rather than on a timer, so the trigger and the
+  // ring that announces it read the same clock — and so a throttled timer
+  // cannot leave the ring full with nothing having happened.
+  const held = gesture.down && !gesture.moved ? performance.now() - gesture.downAt : 0
+  if (held >= HOLD_MS) beginHold()
+
+  if (els.holdRing) {
+    const t = gesture.holding ? 1 : clamp01(held / HOLD_MS)
+    els.holdRing.style.strokeDashoffset = String(RING_LENGTH * (1 - t))
+    els.holdBadge?.classList.toggle('is-armed', t > 0)
+  }
 }

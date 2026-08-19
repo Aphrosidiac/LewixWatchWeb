@@ -122,6 +122,38 @@ export const EXPLODE_LABELS = [
   'Balance',
 ]
 
+/* What each caption opens into when you click it. The reference ships the
+   same card for every part (its copy is a placeholder describing a crown), so
+   these are written from the actual calibre instead — the parts on screen are
+   a real ETA 6498-1 and saying otherwise would be the one thing a watchmaker
+   would spot immediately. */
+export const EXPLODE_PARTS = [
+  {
+    name: 'Keyless works',
+    fn: 'The stem, sliding pinion and setting levers on the dial side. Pulling the crown throws the yoke, which slides the pinion out of the winding gear and into the setting wheels — the mechanism that decides whether turning the crown winds the watch or moves the hands.',
+  },
+  {
+    name: 'Main plate',
+    fn: 'The foundation every other component is located against. Its jewelled bearings fix the distance between each wheel to within a hundredth of a millimetre, which is what keeps the going train meshing cleanly for decades.',
+  },
+  {
+    name: 'Going train',
+    fn: 'Barrel, centre, third, second and escape wheels. The mainspring unwinds through this gearing at a fixed ratio, stepping one slow rotation up into the hand speeds and delivering the last of it to the escapement.',
+  },
+  {
+    name: 'Bridges',
+    fn: 'Barrel, train and pallet bridges cap the train from above and carry the upper pivots. Their upper faces are the ones you see through a display back, finished with côtes de Genève.',
+  },
+  {
+    name: 'Winding works',
+    fn: 'Ratchet wheel, crown wheel and click. Winding turns the ratchet wheel against the click, which lets the mainspring take up tension in one direction and refuses to give it back in the other.',
+  },
+  {
+    name: 'Balance',
+    fn: 'The balance wheel, hairspring and its bridge — the part that actually keeps time. It swings at 18,000 vibrations an hour, and everything else in the movement exists to keep it swinging and to count what it does.',
+  },
+]
+
 export const COLOURWAYS = [
   { name: 'Silver Steel', ghost: ['Silver', 'Steel'], colour: 0xd9d9dd, rough: 0.16, metal: 1.0 },
   { name: 'Deep black', ghost: ['Deep', 'Black'], colour: 0x1c1c1e, rough: 0.28, metal: 1.0 },

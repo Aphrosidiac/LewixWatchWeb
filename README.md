@@ -93,6 +93,47 @@ where the story wants it centre stage. Instead the page goes dark and the
 watch's `envMapIntensity` is pulled down so it reads gunmetal, while the
 movement stays fully lit.
 
+### The disassembly is interactive
+
+Three gestures share one pointer inside the exploded view, told apart by
+distance and time and resolved on `pointerup`, so nothing commits until the
+gesture is actually over:
+
+| Gesture | Effect |
+| --- | --- |
+| Hover | Raycasts the calibre; the caption under that group inks in, the rest of the movement steps back |
+| Tap / click | Opens a card with the group's name and what it does, pans it clear of the card, pushes the others most of the way out |
+| Drag | Orbits the stack — deliberately shallow, ±34° of yaw |
+| Press and hold | Stops the page scroll and pushes the camera in until you let go; the badge ring fills over the dwell |
+| `Esc`, **Close**, or tapping the same part again | Back out |
+
+The captions are real `<button>`s, so the whole thing is reachable without a
+pointer at all.
+
+Three details that are not obvious from the outside:
+
+- **The hold is detected in the render loop, not on a `setTimeout`.** The
+  trigger and the ring that announces it then read the same clock, and a
+  throttled timer cannot leave the ring full with nothing having happened.
+- **The canvas only takes the pointer while the parts are actually spread.**
+  It is `pointer-events: none` everywhere else, or the page would stop
+  scrolling under the cursor. On touch it is `touch-action: pan-y` — a
+  horizontal drag orbits, a vertical one still scrolls, so nobody gets
+  stranded mid-page.
+- **The UI layer is `position: fixed` and lives outside `#root`'s stacking
+  context.** `#root` deliberately carries no `z-index`; sections carry it
+  instead. Give `#root` one and the controls are trapped below the canvas and
+  become unclickable.
+
+Every interaction channel — orbit, pan, dolly, lift, the dimming mix — is a
+target the render loop eases toward, so scrolling out of the section unwinds a
+drag rather than freezing it.
+
+Parts are grouped to captions by **assembly-layer band**, not by ranking the
+distinct layer values and spreading them evenly. The layers are not evenly
+populated, and the even spread puts the main plate under the "going train"
+caption.
+
 ### The editorial stills
 
 The photo cards in the editions and breakdown sections are not stock images —

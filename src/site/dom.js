@@ -1,5 +1,6 @@
 import {
   SECTIONS,
+  EXPLODE_PARTS,
   BRAND,
   TIMELESS_LINES,
   PRECISE_LINES,
@@ -144,12 +145,36 @@ export function buildDOM(root) {
   make(
     S.disassembly,
     `<div class="horizon"></div>
-     <div class="explore-pill"><span class="ring"></span><em>Click</em>&nbsp;to explore</div>
-     <div class="leaders">${EXPLODE_LABELS.map(
-       (n, i) =>
-         `<div class="leader" data-i="${i}"><span class="stem"></span><span class="name">${n}</span></div>`
-     ).join('')}</div>
-     <div class="badge">Hold to<br>explore</div>`
+     <div class="uilayer">
+       <div class="explore-pill">
+         <span class="ring"></span>
+         <span class="pointer-only"><em>Click</em>&nbsp;to explore</span>
+         <span class="touch-only"><em>Drag &amp; tap</em>&nbsp;to explore</span>
+       </div>
+       <div class="leaders">${EXPLODE_LABELS.map(
+         (n, i) =>
+           `<button class="leader" data-i="${i}" type="button"><span class="stem"></span><span class="name">${n}</span></button>`
+       ).join('')}</div>
+       <div class="badge badge--hold" id="holdBadge">
+         <svg class="badge__ring" viewBox="0 0 100 100" aria-hidden="true">
+           <circle cx="50" cy="50" r="49" />
+         </svg>
+         <span>Hold to<br>explore</span>
+       </div>
+       <aside class="partcard" id="partCard" aria-hidden="true">
+         <button class="partcard__close" id="partClose" type="button">
+           <span class="x" aria-hidden="true"></span>Close
+         </button>
+         <div class="partcard__row">
+           <div class="partcard__label">Name</div>
+           <div class="partcard__name" id="partName"></div>
+         </div>
+         <div class="partcard__row">
+           <div class="partcard__label">Function</div>
+           <div class="partcard__fn" id="partFn"></div>
+         </div>
+       </aside>
+     </div>`
   )
 
   /* 4 — mechanical heart --------------------------------------------- */

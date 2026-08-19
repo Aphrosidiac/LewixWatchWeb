@@ -419,17 +419,29 @@ export async function createScene(canvas, onProgress) {
   // the movement into two overlapping columns and pushes the centre of mass
   // off-frame. Rank the distinct layers instead and hand each an evenly
   // spaced column, which is also what makes the six captions line up.
-  const distinct = [...new Set(movementParts.map((p) => p.layer))].sort((a, b) => a - b)
+  // Assembly-layer bands, straight off the ETA's own build order. Ranking
+  // the distinct layer values and spreading them evenly is the obvious move
+  // and it is wrong: the layers are not evenly populated, so the main plate
+  // ends up under the "going train" caption. Naming the bands keeps every
+  // part under the caption that actually describes it.
+  const COLUMN_BANDS = [
+    { upto: -1.2, column: 0 }, // keyless works, dial side
+    { upto: 0.5, column: 1 }, // motion work and the main plate
+    { upto: 1.5, column: 2 }, // going train
+    { upto: 2.9, column: 3 }, // bridges and their screws
+    { upto: 3.9, column: 4 }, // winding works
+    { upto: Infinity, column: 5 }, // balance, regulator, shock setting
+  ]
   const nCol = EXPLODE_LABELS.length
   const _s = new THREE.Vector3()
   let wSum = 0
   let wSlot = 0
   for (const p of movementParts) {
-    const rank = distinct.indexOf(p.layer) / Math.max(1, distinct.length - 1)
-    p.column = Math.min(nCol - 1, Math.round(rank * (nCol - 1)))
+    const band = COLUMN_BANDS.find((b) => p.layer <= b.upto) || COLUMN_BANDS[nCol - 1]
+    p.column = band.column
     // Sit on the caption's column, with a hair of scatter so parts sharing a
     // layer do not z-fight into a single silhouette.
-    p.slot = p.column / (nCol - 1) + (rank - p.column / (nCol - 1)) * 0.35
+    p.slot = p.column / (nCol - 1) + Math.sin(p.layer * 2.3) * 0.018
 
     p.mesh.geometry.computeBoundingBox()
     p.mesh.geometry.boundingBox.getSize(_s)
@@ -561,6 +573,20 @@ export async function createScene(canvas, onProgress) {
     colour: 0,
     pointer: new THREE.Vector2(),
     pointerTarget: new THREE.Vector2(),
+
+    /* Disassembly interaction. All of these are targets that the render loop
+       eases toward, so a release or a scroll-away unwinds rather than snaps. */
+    orbit: new THREE.Vector2(),
+    orbitTarget: new THREE.Vector2(),
+    dolly: 0,
+    dollyTarget: 0,
+    pan: 0,
+    panTarget: 0,
+    lift: 0,
+    liftTarget: 0,
+    hover: -1,
+    selected: -1,
+    selectMix: 0,
   }
 
   let W = 1
@@ -708,13 +734,27 @@ export async function createScene(canvas, onProgress) {
     // (focus 1) sits on the rig origin.
     watch.position.copy(watchHome).addScaledVector(caseCentre, -(pose.focus || 0))
 
+    // Ease every interaction channel toward its target. Only the movement
+    // subject reads them, but they are damped unconditionally so that
+    // scrolling out of the section unwinds a drag instead of freezing it.
+    state.orbit.lerp(state.orbitTarget, 0.12)
+    state.dolly += (state.dollyTarget - state.dolly) * 0.07
+    state.pan += (state.panTarget - state.pan) * 0.09
+    state.lift += (state.liftTarget - state.lift) * 0.09
+    state.selectMix += ((state.selected >= 0 ? 1 : 0) - state.selectMix) * 0.1
+
     const rigs = [watchRig, movementRig, braceletRig, lineupRig]
     for (const rig of rigs) {
       if (!rig.visible) continue
-      rig.position.set(pose.x * world.w, pose.y * world.h, pose.z)
+      const interactive = rig === movementRig
+      rig.position.set(
+        pose.x * world.w - (interactive ? state.pan : 0),
+        pose.y * world.h + (interactive ? state.lift : 0),
+        pose.z + (interactive ? state.dolly : 0)
+      )
       rig.rotation.set(
-        pose.rx + state.pointer.y * 0.06,
-        pose.ry + state.pointer.x * 0.09,
+        pose.rx + state.pointer.y * 0.06 + (interactive ? state.orbit.y : 0),
+        pose.ry + state.pointer.x * 0.09 + (interactive ? state.orbit.x : 0),
         pose.rz
       )
       rig.scale.setScalar(pose.s)
@@ -732,6 +772,7 @@ export async function createScene(canvas, onProgress) {
         p.mesh.position.y *= Math.max(0, 1 - e * 0.75)
         p.mesh.position.z += Math.sin(p.slot * 31.7) * 0.01 * e
       }
+      dressForSelection()
     }
 
     if (braceletRig.visible) {
@@ -759,8 +800,74 @@ export async function createScene(canvas, onProgress) {
     particles.rotation.z = Math.sin(scroll * 0.00006) * 0.16
   }
 
+  /**
+   * Push everything that is not the hovered or selected column back.
+   *
+   * Opacity is only switched on while a selection is actually running —
+   * leaving 44 transparent materials in the scene costs a depth sort every
+   * frame for the rest of the page, and buys nothing.
+   */
+  function dressForSelection() {
+    const active = state.selected >= 0 ? state.selected : state.hover
+    // A hover is a glance, a selection is a commitment. Hovering knocks the
+    // rest back just enough to read as a group; selecting pushes them right
+    // out of the way. Using one strength for both makes a passing cursor
+    // look like it broke the page.
+    const strength = state.selected >= 0 ? 0.82 * state.selectMix : state.hover >= 0 ? 0.34 : 0
+
+    for (const p of movementParts) {
+      const m = p.mesh.material
+      const isActive = active < 0 || p.column === active
+      const opacity = 1 - (isActive ? 0 : strength)
+
+      if (opacity > 0.995) {
+        if (m.transparent) {
+          m.transparent = false
+          m.opacity = 1
+          m.needsUpdate = true
+        }
+      } else {
+        if (!m.transparent) {
+          m.transparent = true
+          m.needsUpdate = true
+        }
+        m.opacity = opacity
+      }
+
+      // A touch more light on the part under the cursor, so the highlight
+      // reads even where a column is mostly small screws.
+      m.envMapIntensity = 1.35 + (isActive && active >= 0 ? 0.4 : 0)
+    }
+  }
+
   function render() {
     renderer.render(scene, camera)
+  }
+
+  /* ---- disassembly picking ------------------------------------------- */
+  const raycaster = new THREE.Raycaster()
+  const ndc = new THREE.Vector2()
+  const movementMeshes = movementParts.map((p) => p.mesh)
+
+  /** Which caption column the pointer is over, or -1. */
+  function pickColumn(x, y) {
+    if (!movementRig.visible) return -1
+    ndc.set((x / W) * 2 - 1, -(y / H) * 2 + 1)
+    scene.updateMatrixWorld()
+    raycaster.setFromCamera(ndc, camera)
+    const hit = raycaster.intersectObjects(movementMeshes, false)[0]
+    if (!hit) return -1
+    const part = movementParts.find((p) => p.mesh === hit.object)
+    return part ? part.column : -1
+  }
+
+  /** World-space X of a column's centre, used to pan a selection into frame. */
+  function columnWorldX(column) {
+    const found = movementParts.filter((p) => p.column === column)
+    if (!found.length) return 0
+    let sum = 0
+    for (const p of found) sum += p.mesh.getWorldPosition(tmp).x
+    return sum / found.length
   }
 
   /* Project a movement part column to screen space, for the DOM leader
@@ -796,6 +903,8 @@ export async function createScene(canvas, onProgress) {
     setDarkness,
     applyColourway,
     productShot,
+    pickColumn,
+    columnWorldX,
     columnScreenX,
     worldPerScreen,
   }
